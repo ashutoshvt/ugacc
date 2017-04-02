@@ -7,16 +7,19 @@
 
 namespace psi { namespace ugacc {
 
-CCPert::CCPert(double **pert, double omega, shared_ptr<CCWfn> CC, shared_ptr<HBAR> HBAR)
+CCPert::CCPert(double **pert, double omega, shared_ptr<CCWfn> CC, shared_ptr<HBAR> HBAR, shared_ptr<CCLambda> CCLambda)
 {
   CC_ = CC;
   HBAR_ = HBAR;
   pert_ = pert;
   omega_ = omega;
+  CCLambda_= CCLambda;
 
   H_ = CC_->H_;
   no_ = CC_->no_;
   nv_ = CC_->nv_;
+  l1_ = CCLambda_->l1_;
+  l2_ = CCLambda_->l2_;
 
   int no = no_;
   int nv = nv_;
@@ -553,6 +556,7 @@ void CCPert::build_Y1()
   for(int i=0; i < no; i++)
     for(int a=0; a < nv; a++) {
       double value = 2*Avo_[a][i] + omega_ * Y1[i][a];
+      // AK:  or double value = 2*pert_[a][i] + omega_ * Y1[i][a];
 
     for(int e=0; e < nv; e++)
       value += Y1[i][e] * Hvv[e][a];
@@ -576,11 +580,97 @@ void CCPert::build_Y1()
 
       for(int e=0; e < nv; e++)
         for(int f=0; f < nv; f++)
-          value -= Gvv[e][f] * (2*Hvovv[e][i][f][a] - Hvovv[e][i][a][f]);
+          value -= Gvv[e][f] * (2*Hvovv[e][i][f][a] - Hvovv[e][i][a][f]);    // not sure where these terms show up
 
       for(int m=0; m < no; m++)
         for(int n=0; n < no; n++)
-          value -= Goo[m][n] * (2*Hooov[m][i][n][a] - Hooov[i][m][n][a]);
+          value -= Goo[m][n] * (2*Hooov[m][i][n][a] - Hooov[i][m][n][a]);    // not sure where these terms show up
+								             // Is G == X2 * L2 ??
+
+
+	//  Other terms - AK    //
+      
+      for(int m=0; m < no; m++)
+        for(int e=0; e < nv; e++)
+	  value += (X1_[i][a] + X1_[m][e]) * H_->L_[i][m][a+no][e+no];
+      
+      for(int m=0; m < no; m++)
+          value -= l1_[m][a] * Aoo_[i][m];
+
+      for(int e=0; e < nv; e++)
+          value += l1_[i][e] * Avv_[e][a];
+
+      for(int m=0; m < no; m++)
+        for(int e=0; e < nv; e++)
+          for(int f=0; f < nv; f++)
+            value += l2_[i][m][e][f] * Avvvo_[e][f][a][m];
+
+      for(int m=0; m < no; m++)
+        for(int n=0; n < no; n++)
+          for(int e=0; e < nv; e++)
+            value -= l2_[m][n][a][e] * Aovoo_[i][e][m][n];
+
+      for(int m=0; m < no; m++)
+        for(int e=0; e < nv; e++){
+	  value -= X1_[m][e] * Hov[m][a] * l1_[i][e];	
+	  value -= X1_[i][a] * Hov[i][e] * l1_[m][a];	
+          for(int n=0; n < no; n++){
+            value -= X1_[m][e] * (2*Hooov[m][i][n][a] - Hooov[i][m][n][a]) * l1_[n][e]; 
+            value -= X1_[i][a] * (2*Hooov[i][m][n][e] - Hooov[m][i][n][e]) * l1_[n][a]; 
+	}
+          for(int f=0; f < nv; f++){
+            value -= X1_[m][e] * (2*Hvovv[f][m][a][e] - Hvovv[f][m][e][a]) * l1_[i][f];
+            value -= X1_[i][a] * (2*Hvovv[f][i][e][a] - Hvovv[f][i][a][e]) * l1_[m][f];
+        }
+   }
+      for(int m=0; m < no; m++)
+        for(int n=0; n < no; n++)
+          for(int e=0; e < nv; e++)
+            for(int f=0; f < nv; f++){
+       	      value -= X2_[m][n][e][f] * H_->L_[i][m][a+no][f+no] * l1_[n][e];
+	      value += X2_[m][n][e][f] * H_->L_[i][m][a+no][e+no] * l1_[n][f];
+	      value -= X2_[i][m][a][e] * H_->L_[n][i][f+no][e+no] * l1_[m][a];
+	      value -= X2_[i][n][a][f] * H_->L_[m][i][e+no][f+no] * l1_[n][a];
+  }
+
+      for(int m=0; m < no; m++)
+        for(int e=0; e < nv; e++){
+          for(int n=0; n < no; n++)
+            for(int f=0; f < nv; f++){
+              value -= X1_[m][e] * Hovov[m][f][n][a] * l2_[n][i][e][f]; 	
+	      value -= X1_[i][a] * Hovov[i][f][n][e] * l2_[n][m][a][f]; 	
+	      value -= X1_[m][e] * Hovvo[m][f][a][n] * l2_[n][i][f][e]; 	
+	      value -= X1_[i][a] * Hovvo[i][f][e][n] * l2_[n][m][f][a]; 	
+		}
+            for(int f=0; f < nv; f++)
+              for(int g=0; g < nv; g++)
+                value += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];
+            for(int n=0; n < no; n++)
+              for(int o=0; o < no; o++)
+                value += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];
+         }    
+
+      for(int m=0; m < no; m++)
+        for(int n=0; n < no; n++)
+          for(int e=0; e < nv; e++)
+            for(int f=0; f < nv; f++){
+              value -= X2_[m][n][e][f] * Hov[m][a] * l2_[n][i][f][e];
+	      value -= X2_[i][n][a][f] * Hov[i][e] * l2_[n][m][f][a];
+              for(int g=0; g < nv; g++){
+	        value -= X2_[m][n][e][f] * Hvovv[g][n][e][a] * l2_[i][m][f][g] ; 	
+	        value -= X2_[i][n][a][f] * Hvovv[g][n][a][e] * l2_[m][i][f][g] ; 	
+	        value -= X2_[m][i][e][a] * Hvovv[g][i][e][f] * l2_[n][m][a][g] ; 	
+	        value -= X2_[m][n][e][f] * (2*Hvovv[g][m][a][e] - Hvovv[g][m][e][a]) * l2_[n][i][f][g] ; 	// use L_
+	        value -= X2_[i][n][a][f] * (2*Hvovv[g][i][e][a] - Hvovv[g][i][a][e]) * l2_[n][m][f][g] ; 	
+	      }
+              for(int o=0; o < no; o++){
+	        value -= X2_[m][n][e][f] * Hooov[m][n][o][a] * l2_[o][i][e][f] ; 	
+	        value -= X2_[i][n][a][f] * Hooov[i][n][o][e] * l2_[o][m][a][f] ; 	
+	        value -= X2_[m][i][e][a] * Hooov[m][i][o][f] * l2_[o][n][e][a] ; 	
+	        value -= X2_[m][n][e][f] * (2*Hooov[m][i][o][a] - Hooov[i][m][o][a]) * l2_[n][o][f][e] ; 	
+	        value -= X2_[i][n][a][f] * (2*Hooov[i][m][o][f] - Hooov[m][i][f][o]) * l2_[n][o][f][a] ; // use L_	 
+              }
+     }
   }
 }
 
@@ -605,6 +695,7 @@ void CCPert::build_Y2()
   double ****Hoooo = HBAR_->Hoooo_;
   double ****Hvovv = HBAR_->Hvovv_;
   double ****Hooov = HBAR_->Hooov_;
+  double ****ints =  H_->ints_;
 
   for(int i=0; i < no; i++)
     for(int j=0; j < no; j++)
@@ -636,7 +727,7 @@ void CCPert::build_Y2()
 
           for(int m=0; m < no; m++)
             for(int e=0; e < nv; e++) {
-              value += Y2[m][j][e][b] * (2*Hovvo[i][e][a][m] - Hovov[i][e][m][a]);
+              value += Y2[m][j][e][b] * (2*Hovvo[i][e][a][m] - Hovov[i][e][m][a]);  // use L_
               value -= Y2[m][i][b][e] * Hovov[j][e][m][a];
               value -= Y2[m][i][e][b] * Hovvo[j][e][a][m];
             }
@@ -646,7 +737,78 @@ void CCPert::build_Y2()
           for(int m=0; m < no; m++)
             value -= Goo[m][i]*H_->L_[m][j][a+no][b+no];
 
-        }
+	  // Additional terms : AK
+	  
+	  value += 2*l1_[j][b] * pert_[i][a] - l1_[i][b] * pert_[j][a];
+
+ 	  for(int e=0; e < nv; e++)
+            value += l2_[i][j][e][b]*Avv_[e][a];
+
+          for(int m=0; m < no; m++)
+            value -= Y2[m][j][a][b]*Aoo_[i][m];
+
+          for(int m=0; m < no; m++)
+            for(int e=0; e < nv; e++) {
+	      value -= X1_[j][b] * l1_[j][a] * H_->L_[m][i][e][b];
+	      value -= X1_[m][e] * l1_[m][b] * H_->L_[i][j][a][e];
+	      value -= X1_[i][a] * l1_[i][e] * H_->L_[j][m][b][a];
+	      value += X1_[m][e] * l1_[j][b] * H_->L_[i][m][a][e];
+	      value += X1_[i][a] * l1_[j][b] * H_->L_[i][m][a][e];
+         }
+
+	  for(int m=0; m < no; m++)
+            for(int e=0; e < nv; e++) {
+	      value -= Hov[m][a] * l2_[j][i][b][e] * X1_[m][e]; 
+	      value -= Hov[i][e] * l2_[j][m][b][a] * X1_[m][e]; 
+              for(int f=0; f < nv; f++){
+                value -= Hvovv[f][m][b][a] * l2_[j][i][f][e] * X1_[m][e];  
+                value -= Hvovv[f][j][e][a] * l2_[m][i][f][b] * X1_[j][b];  
+                value -= Hvovv[f][i][b][e] * l2_[j][m][f][a] * X1_[i][a];  
+                value += (2 * Hvovv[f][m][a][e] - Hvovv[f][m][e][a]) * l2_[j][i][b][f] * X1_[m][e];  // use L_
+                value += (2 * Hvovv[f][i][e][a] - Hvovv[f][i][a][e]) * l2_[j][m][b][a] * X1_[i][a];  // use L_ 
+              }
+	      for(int n=0; n < no; n++){
+                 value += Hooov[j][m][n][a] * l2_[n][i][b][e] * X1_[m][e];
+                 value += Hooov[m][j][n][a] * l2_[n][i][e][b] * X1_[j][b];
+                 value += Hooov[j][i][n][e] * l2_[n][m][b][a] * X1_[i][a];
+                 value -= (2 * Hooov[m][i][n][a] - Hooov[i][m][n][a]) * l2_[j][n][b][e] * X1_[m][e]; // use L- 
+                 value -= (2 * Hooov[i][m][n][e] - Hooov[m][i][n][e]) * l2_[j][n][b][a] * X1_[i][a]; // use L_ 
+              }
+	}
+
+	  for(int m=0; m < no; m++)
+            for(int n=0; n < no; n++)
+              for(int e=0; e < nv; e++)
+                for(int f=0; f < nv; f++){
+		  value += 0.5 * ints[m][n][a][b] * l2_[j][i][f][e] * X2_[m][n][e][f] ;
+		  value += 0.5 * ints[n][m][a][b] * l2_[j][i][e][f] * X2_[m][n][e][f] ;
+		  value += 0.5 * ints[j][n][a][e] * l2_[m][i][f][b] * X2_[j][n][b][f] ;
+		  value += 0.5 * ints[n][j][a][e] * l2_[m][i][b][d] * X2_[j][n][b][f] ;
+		  value += 0.5 * ints[j][m][a][f] * l2_[n][i][e][b] * X2_[j][m][b][e] ;
+		  value += 0.5 * ints[m][j][a][f] * l2_[n][i][b][e] * X2_[j][m][b][e] ;
+		  value += 0.5 * ints[j][n][e][a] * l2_[i][m][f][b] * X2_[j][n][b][f] ;
+		  value += 0.5 * ints[n][j][e][a] * l2_[i][m][b][f] * X2_[j][n][b][f] ;
+		  value += 0.5 * ints[i][j][m][n] * l2_[n][m][b][a] * X2_[i][j][a][b] ;
+		  value += 0.5 * ints[j][m][f][a] * l2_[i][n][e][b] * X2_[j][m][b][e] ;
+		  value += 0.5 * ints[m][i][f][b] * l2_[j][n][b][e] * X2_[m][i][e][b] ;
+		  value += 0.5 * ints[i][j][f][e] * l2_[m][n][b][a] * X2_[i][j][a][b] ;
+
+ 		  value -= 2*0.5 * H_->L_[i][m][a][f] * l2_[j][n][b][e] * X2_[m][n][e][f] ;
+ 		  value -= 0.5 * H_->L_[m][i][e][f] * l2_[j][n][b][a] * X2_[i][n][a][f] ;
+ 		  value -= 0.5 * H_->L_[m][n][e][a] * l2_[j][i][b][f] * X2_[n][i][f][a] ;
+ 		  value -= 0.5 * H_->L_[n][m][f][a] * l2_[j][i][b][e] * X2_[m][i][e][a] ;
+ 		  value -= 0.5 * H_->L_[n][i][f][e] * l2_[j][i][b][a] * X2_[i][m][a][e] ;
+
+		  value -= H_->L_[i][j][a][e] * l2_[n][m][f][b] * X2_[m][n][e][f] ;
+		  value -= H_->L_[i][m][a][b] * l2_[n][j][f][e] * X2_[j][n][b][f] ;
+		  value -= H_->L_[m][j][e][a] * l2_[n][i][f][b] * X2_[i][n][a][f] ;
+
+		  value -= H_->L_[i][m][a][e] * l2_[n][j][f][b] * X2_[m][n][e][f] ;
+		  value -= H_->L_[m][i][e][a] * l2_[n][j][f][b] * X2_[i][n][a][f] ;
+       }
+
+
+   }
 
 }
 */

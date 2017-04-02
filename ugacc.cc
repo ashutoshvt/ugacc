@@ -95,6 +95,20 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
   shared_ptr<PSIO> psio(_default_psio_lib_);
   std::vector<shared_ptr<MOSpace> > spaces;
   spaces.push_back(MOSpace::all);
+
+//  std::vector<std::shared_ptr<MOSpace> >::const_iterator space_it;
+//        outfile->Printf("\n LABEL : \n");
+//
+// for(space_it = spaces.begin(); space_it != spaces.end(); ++space_it){
+//        std::shared_ptr<MOSpace> moSpace = *space_it;
+//        char label = moSpace->label();
+//        char label = moSpace->label();
+//        outfile->Printf("\n LABEL : %c \n",label);
+//    }
+
+
+   outfile->Printf("\n NAMESPACE %s \n",PSIO::default_namespace_);
+
   shared_ptr<Hamiltonian> H(new Hamiltonian(psio, ref, spaces));
   shared_ptr<CCWfn> cc(new CCWfn(ref, H, options));
 
@@ -133,6 +147,7 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
   map<string, shared_ptr<CCPert> > cc_perts; 
   double omega = 0.00;
   vector<string> cart(3); cart[0] = "X"; cart[1] = "Y"; cart[2] = "Z";
+  enum hand {right};
 
   for(vector<string>::size_type iter = 0; iter != cart.size(); iter++) {
     string entry = "Mu" + cart[iter] + std::to_string(omega);

@@ -11,9 +11,10 @@ units bohr
 set {
   basis cc-pVDZ
   freeze_core true
-  r_convergence 1e-15
-  e_convergence 1e-15
+  r_convergence 1e-13
+  e_convergence 1e-13
 }
 
-energy('ccsd(t)')
+#energy('ccsd(t)')
+energy('ccsd')
 
