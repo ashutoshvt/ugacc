@@ -31,6 +31,7 @@ protected:
   friend class CCLambda;
   friend class CCDensity;
   friend class CCPert;
+  friend class CCLinResp;
 }; // Hamiltonian
 
 }} // psi::ugacc

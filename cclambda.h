@@ -51,6 +51,7 @@ protected:
   double ****s2_;
 
   void amp_save();
+  void print_amps();
   double increment_amps();
   void build_G();
   void build_l1();
@@ -64,6 +65,7 @@ public:
 
   friend class CCDensity;
   friend class CCPert;
+  friend class CCLinResp;
 
 }; // CCLambda
 

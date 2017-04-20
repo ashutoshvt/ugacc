@@ -119,7 +119,10 @@ void CCLambda::compute_lambda()
     build_l1();
     build_l2();
     rms = increment_amps();
-    if(rms < CC_->convergence_) break;
+    if(rms < CC_->convergence_) {
+        print_amps();
+	break;
+     }
     if(CC_->do_diis_) {
       build_diis_error();
       diis->add_entry(4, l1err_.data(), l2err_.data(), l1diis_.data(), l2diis_.data());
@@ -349,5 +352,28 @@ void CCLambda::save_diis_vectors()
         }
     }
 }
+
+void CCLambda::print_amps()
+{
+  int no = no_;
+  int nv = nv_;
+
+  outfile->Printf("L1 Amplitudes:\n");
+  for(int i=0; i < no; i++)
+    for(int a=0; a < nv; a++)
+      if(fabs(l1_[i][a]) > 1e-12)
+        outfile->Printf("L1[%d][%d] = %20.15f\n", i, a, l1_[i][a]);
+
+  outfile->Printf("L2 Amplitudes:\n");
+  for(int i=0; i < no; i++)
+    for(int j=0; j < no; j++)
+      for(int a=0; a < nv; a++)
+        for(int b=0; b < nv; b++)
+ if(fabs(l2_[i][j][a][b]) > 1e-12)
+ outfile->Printf("L2[%d][%d][%d][%d] = %20.15f\n", i, j, a, b, l2_[i][j][a][b]);
+
+}
+
+
 
 }} // psi::ugacc

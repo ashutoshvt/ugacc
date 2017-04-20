@@ -43,6 +43,7 @@
 #include "ccdensity.h"
 #include "perturbation.h"
 #include "ccpert.h"
+#include "cclinresp.h"
 
 #include "array.h"
 
@@ -58,9 +59,11 @@ int read_options(std::string name, Options& options)
     options.add_str("REFERENCE", "RHF");
     options.add_str("WFN", "CCSD");
     options.add_str("DERTYPE", "NONE");
+    options.add_str("HAND", "RIGHT");
     options.add_int("MAXITER", 100);
     options.add_bool("DIIS", true);
     options.add_double("R_CONVERGENCE", 1e-7);
+    options.add_double("MY_OMEGA", 0.01);
     options.add_bool("OOC", false);
   }
 
@@ -84,6 +87,10 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
   outfile->Printf("\tDIIS           = %s\n", options.get_bool("DIIS") ? "Yes" : "No");
   outfile->Printf("\tOut-of-core    = %s\n", options.get_bool("OOC") ? "Yes" : "No");
   outfile->Printf("\tDertype        = %s\n", options.get_str("DERTYPE").c_str());
+  outfile->Printf("\tOMEGA          = %3.1e\n", options.get_double("MY_OMEGA"));
+  outfile->Printf("\tHAND           = %s\n", options.get_str("HAND").c_str()); 
+  
+  const char * rol = options.get_str("HAND").c_str() ;
 
   // Error trapping – need closed-shell SCF in place
   if(!ref) throw PSIEXCEPTION("SCF has not been run yet!");
@@ -95,20 +102,6 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
   shared_ptr<PSIO> psio(_default_psio_lib_);
   std::vector<shared_ptr<MOSpace> > spaces;
   spaces.push_back(MOSpace::all);
-
-//  std::vector<std::shared_ptr<MOSpace> >::const_iterator space_it;
-//        outfile->Printf("\n LABEL : \n");
-//
-// for(space_it = spaces.begin(); space_it != spaces.end(); ++space_it){
-//        std::shared_ptr<MOSpace> moSpace = *space_it;
-//        char label = moSpace->label();
-//        char label = moSpace->label();
-//        outfile->Printf("\n LABEL : %c \n",label);
-//    }
-
-
-   outfile->Printf("\n NAMESPACE %s \n",PSIO::default_namespace_);
-
   shared_ptr<Hamiltonian> H(new Hamiltonian(psio, ref, spaces));
   shared_ptr<CCWfn> cc(new CCWfn(ref, H, options));
 
@@ -137,37 +130,71 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
   Process::environment.globals["CURRENT ENERGY"] = ecc + eref;
 
   // Prepare property integrals for perturbed wave functions
-/*
+
   shared_ptr<MintsHelper> mints(new MintsHelper(ref->basisset(), options, 0));
   shared_ptr<Perturbation> mu(new Perturbation("Mu", ref, mints, false));
-*/
+
 
   // Solve perturbed wave function equations for given perturbation and +/- field frequency
-/*
+
   map<string, shared_ptr<CCPert> > cc_perts; 
-  double omega = 0.00;
+  map<string, double > polars; 
+  double omega = options.get_double("MY_OMEGA");
   vector<string> cart(3); cart[0] = "X"; cart[1] = "Y"; cart[2] = "Z";
-  enum hand {right};
+  hand my_hand ;
+  if (!strcmp(rol,"RIGHT")) hand my_hand = right;
+  else  hand my_hand = left;
+
 
   for(vector<string>::size_type iter = 0; iter != cart.size(); iter++) {
     string entry = "Mu" + cart[iter] + std::to_string(omega);
     outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
-    cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), omega, cc, hbar));
+    cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), omega, cc, hbar, cclambda));
     cc_perts[entry]->solve(right);
-    if(omega != 0.0) {
+    //if(omega != 0.0 && my_hand == right) {
+    //if(omega != 0.0) {
       entry = "Mu" + cart[iter] + std::to_string(-omega);
       outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
-      cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), -omega, cc, hbar));
+      cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), -omega, cc, hbar, cclambda));
       cc_perts[entry]->solve(right);
-    }
+    //}
   }
-*/
+
+ for(vector<string>::size_type iter = 0; iter != cart.size(); iter++) {
+    string entry = "Mu" + cart[iter] + std::to_string(omega);
+    outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
+    //cc_perts[entry]->solve(my_hand);
+    cc_perts[entry]->solve(left);
+   }
+    outfile->Printf("\n\n");
+    outfile->Printf("\n\tComputing Polarizability tensor:\n");
+    outfile->Printf("\n\n");
+
 
   // Use perturbed wfns to construct the linear response function
   // Alternatively, build density-based linear response function
-//  std::string mu1 = "Mu" + cart[2] + std::to_string(omega);
-//  std::string mu2 = "Mu" + cart[2] + std::to_string(omega);
-//  shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[mu1], cc_perts[mu2]));
+  std::string mu1 = "Mu" + cart[2] + std::to_string(omega);
+  std::string mu2 = "Mu" + cart[2] + std::to_string(-omega);
+  shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[mu1], cc_perts[mu2]));
+  //double polar = ccpolar->linresp();
+  //outfile->Printf("\npolar_zz: %20.14lf\n", polar);
+  //cc_perts[mu1]->check_linear();
+  ccpolar->check_linear(cc_perts[mu2]);
+  ccpolar->check_quadratic(cc_perts[mu1],cc_perts[mu2]);
+
+//   for(vector<string>::size_type p = 0; p != cart.size(); p++) 
+//       for(vector<string>::size_type q = 0 ; q != cart.size(); q++) {
+//         string pert_p = "Mu" + cart[p] + std::to_string(omega);
+//         string pert_q = "Mu" + cart[q] + std::to_string(omega);
+//         shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[pert_p], cc_perts[pert_q]));
+//         string label = "<<Mu_" + cart[p] + ";" "Mu_" + cart[q] + ">>";
+//         polars[label] = ccpolar->linresp();
+//      }
+//
+//   for(auto elem : polars){
+//      outfile->Printf("\t%s : %20.14lf ", elem.first.c_str(), elem.second);
+//      outfile->Printf("\n\n");
+//      }
 
   return cc;
 }

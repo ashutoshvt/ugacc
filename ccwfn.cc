@@ -89,7 +89,7 @@ CCWfn::CCWfn(shared_ptr<Wavefunction> reference, shared_ptr<Hamiltonian> H,
         for(int b=0; b < nv; b++)
           t2_[i][j][a][b] = ints[i][j][a+no][b+no]/D2_[i][j][a][b];
 
-  print_amps();
+  //print_amps();
 
   // DIIS Vectors
   t1diis_.resize(no_*nv_);

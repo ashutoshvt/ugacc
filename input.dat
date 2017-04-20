@@ -1,5 +1,6 @@
 # PYTHONPATH must include directory above plugin directory.
 #     Define either externally or here, then import plugin.
+memory 5 gb
 sys.path.insert(0, './..')
 import ugacc
 
@@ -11,22 +12,36 @@ molecule {
 no_reorient
 no_com
 units bohr
+symmetry C1
 }
+
+#molecule h2o2 {
+# O     -0.028962160801    -0.694396279686    -0.049338350190
+# O      0.028962160801     0.694396279686    -0.049338350190
+# H      0.350498145881    -0.910645626300     0.783035421467
+# H     -0.350498145881     0.910645626300     0.783035421467
+#noreorient
+#symmetry c1
+#}
 
 set {
-  basis sto-3g
-  freeze_core true
-  r_convergence 1e-15
+  basis sto-3g 
+  #basis 6-31g 
+  #freeze_core true
+  r_convergence 1e-13
   d_convergence 1e-13
-  e_convergence 1e-15
-  diis true
-  maxiter 500
-#  omega [0.01]
-  gauge both
+  e_convergence 1e-13
+  diis true 
+  maxiter 100
+  my_omega 0.00
+  hand left 
+  #gauge both
 }
+gradient('ugacc', wfn='ccsd')
+#energy('ugacc', wfn='ccsd')
 
 #gradient('ccsd')
-set ooc true
+#set ooc true
 #$property('ccsd', properties=['rotation'])
-gradient('ugacc', wfn='ccsd(t)')
+#gradient('ugacc', wfn='ccsd(t)')
 

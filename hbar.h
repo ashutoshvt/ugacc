@@ -33,6 +33,7 @@ protected:
   friend class CCWfn;
   friend class CCLambda;
   friend class CCPert;
+  friend class CCLinResp;
 };
 
 }} // psi::ugacc

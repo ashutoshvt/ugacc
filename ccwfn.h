@@ -107,6 +107,7 @@ public:
   friend class CCLambda;
   friend class CCDensity;
   friend class CCPert;
+  friend class CCLinResp;
 }; // CCWfn
 
 }} // psi::ugacc

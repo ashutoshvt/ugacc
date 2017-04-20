@@ -12,13 +12,16 @@ using namespace std;
 
 namespace psi { namespace ugacc {
 
-enum hand {left, right};
+enum hand {right, left};
+extern hand my_hand;
 
 class CCPert {
 public:
   CCPert(double **pert, double omega, shared_ptr<CCWfn> CC, shared_ptr<HBAR> HBAR, shared_ptr<CCLambda> CCLambda);
   ~CCPert();
   void solve(enum hand);
+  void check_linear();
+
 
 protected:
   int no_;
@@ -85,7 +88,7 @@ protected:
   void save_diis_vectors(enum hand);
   void print_amps(enum hand);
 
-  friend class CCResp;
+  friend class CCLinResp;
 };
 
 }} // psi::ugacc
