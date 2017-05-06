@@ -42,6 +42,15 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
       Hov_[m][e] = value;
     }
 
+        //outfile->Printf("\n Hov \n") ;
+  for(int m=0; m < no; m++){
+    for(int e=0; e < nv; e++) {
+       //outfile->Printf(" %20.14lf ",Hov_[m][e]) ;
+        }
+        //outfile->Printf("\n") ;
+     }
+
+
   for(int m=0; m < no; m++)
     for(int i=0; i < no; i++) {
       double value = fock[m][i];
@@ -55,6 +64,15 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
       }
       Hoo_[m][i] = value;
     }
+	//outfile->Printf("\n Hoo \n") ;
+  for(int m=0; m < no; m++){
+    for(int i=0; i < no; i++) {
+       //outfile->Printf(" %20.14lf ",Hoo_[m][i]) ;
+        }
+        //outfile->Printf("\n") ;
+     }
+
+
 
   for(int a=0; a < nv; a++)
     for(int e=0; e < nv; e++) {
@@ -70,6 +88,16 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
       Hvv_[a][e] = value;
     }
 
+ //outfile->Printf("\n Hvv \n") ;
+  for(int a=0; a < nv; a++){
+    for(int e=0; e < nv; e++) {
+       //outfile->Printf(" %20.14lf ",Hvv_[a][e]) ;
+        }
+        //outfile->Printf("\n") ;
+     }
+
+
+
   for(int m=0; m < no; m++)
     for(int n=0; n < no; n++)
       for(int i=0; i < no; i++)
@@ -82,6 +110,18 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           }
           Hoooo_[m][n][i][j] = value;
         }
+
+ //outfile->Printf("\n Hoooo \n") ;
+  for(int m=0; m < no; m++)
+    for(int n=0; n < no; n++){
+      for(int i=0; i < no; i++)
+        for(int j=0; j < no; j++) {
+	//outfile->Printf(" %20.14lf ",Hoooo_[m][n][i][j]) ;
+         }
+        //outfile->Printf("\n") ;
+    }
+
+
 
   for(int a=0; a < nv; a++)
     for(int b=0; b < nv; b++)
@@ -96,6 +136,17 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           Hvvvv_[a][b][e][f] = value;
         }
 
+   //outfile->Printf("\n Hvvvv \n") ;
+  for(int a=0; a < nv; a++)
+    for(int b=0; b < nv; b++){
+      for(int e=0; e < nv; e++)
+        for(int f=0; f < nv; f++) {
+	//outfile->Printf(" %20.14lf ",Hvvvv_[a][b][e][f]) ;
+	}
+	//outfile->Printf("\n") ;
+     }
+
+
   for(int a=0; a < nv; a++)
     for(int m=0; m < no; m++)
       for(int e=0; e < nv; e++)
@@ -106,6 +157,17 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           Hvovv_[a][m][e][f] = value;
         }
 
+   //outfile->Printf("\n Hvovv \n") ;
+  for(int a=0; a < nv; a++)
+    for(int m=0; m < no; m++){
+      for(int e=0; e < nv; e++)
+        for(int f=0; f < nv; f++) {
+	//outfile->Printf("\n %20.14lf",Hvovv_[a][m][e][f]);
+	}
+	//outfile->Printf("\n") ;
+       }
+
+
   for(int m=0; m < no; m++)
     for(int n=0; n < no; n++)
       for(int i=0; i < no; i++)
@@ -115,6 +177,16 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
             value += t1[i][f] * ints[n][m][e+no][f+no];
           Hooov_[m][n][i][e] = value;
         }
+
+ //outfile->Printf("\n Hooov \n") ;
+  for(int m=0; m < no; m++)
+    for(int n=0; n < no; n++){
+      for(int i=0; i < no; i++)
+      for(int e=0; e < nv; e++){
+        //outfile->Printf("\n %20.14lf",Hooov_[m][n][i][e]);
+        }
+        //outfile->Printf("\n") ;
+       }
 
   for(int m=0; m < no; m++)
     for(int b=0; b < nv; b++)
@@ -134,6 +206,17 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           Hovvo_[m][b][e][j] = value;
         }
 
+  //outfile->Printf("\n Hovvo \n") ;
+  for(int m=0; m < no; m++)
+    for(int b=0; b < nv; b++){
+      for(int e=0; e < nv; e++)
+          for(int j=0; j < no; j++) {
+        //outfile->Printf("\n %20.14lf",Hovvo_[m][b][e][j]);
+        }
+        //outfile->Printf("\n") ;
+       }
+
+
   for(int m=0; m < no; m++)
     for(int b=0; b < nv; b++)
       for(int j=0; j < no; j++)
@@ -149,6 +232,18 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           }
           Hovov_[m][b][j][e] = value;
         }
+
+   //outfile->Printf("\n Hovov \n") ;
+  for(int m=0; m < no; m++)
+    for(int b=0; b < nv; b++){
+          for(int j=0; j < no; j++) 
+            for(int e=0; e < nv; e++){
+              //outfile->Printf("\n %20.14lf",Hovov_[m][b][j][e]);
+        }
+        //outfile->Printf("\n") ;
+       }
+
+
 
   for(int a=0; a < nv; a++)
     for(int b=0; b < nv; b++)
@@ -188,6 +283,17 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
           Hvvvo_[a][b][e][i] = value;
         }
 
+ //outfile->Printf("\n Hvvvo \n") ;
+   for(int a=0; a < nv; a++)
+    for(int b=0; b < nv; b++){
+      for(int e=0; e < nv; e++)
+        for(int i=0; i < no; i++) {
+              //outfile->Printf("\n %20.14lf",Hvvvo_[a][b][e][i]);
+        }
+        //outfile->Printf("\n") ;
+       }
+
+
   for(int m=0; m < no; m++)
     for(int b=0; b < nv; b++)
       for(int i=0; i < no; i++)
@@ -225,6 +331,18 @@ HBAR::HBAR(shared_ptr<Hamiltonian> H, shared_ptr<CCWfn> CC)
 
           Hovoo_[m][b][i][j] = value;
         }
+
+   //outfile->Printf("\n Hovoo \n") ;
+  for(int m=0; m < no; m++)
+    for(int b=0; b < nv; b++){
+      for(int i=0; i < no; i++)
+        for(int j=0; j < no; j++) {
+              //outfile->Printf("\n %20.14lf",Hovoo_[m][b][i][j]);
+        }
+        //outfile->Printf("\n") ;
+       }
+
+
 }
 
 HBAR::~HBAR()

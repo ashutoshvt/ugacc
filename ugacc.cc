@@ -153,48 +153,77 @@ SharedWavefunction ugacc(SharedWavefunction ref, Options& options)
     cc_perts[entry]->solve(right);
     //if(omega != 0.0 && my_hand == right) {
     //if(omega != 0.0) {
-      entry = "Mu" + cart[iter] + std::to_string(-omega);
-      outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
-      cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), -omega, cc, hbar, cclambda));
-      cc_perts[entry]->solve(right);
+      //entry = "Mu" + cart[iter] + std::to_string(-omega);
+      //outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
+      //cc_perts[entry] = shared_ptr<CCPert>(new CCPert(mu->prop_p((int) iter), -omega, cc, hbar, cclambda));
+      //cc_perts[entry]->solve(right);
     //}
   }
 
  for(vector<string>::size_type iter = 0; iter != cart.size(); iter++) {
     string entry = "Mu" + cart[iter] + std::to_string(omega);
     outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
-    //cc_perts[entry]->solve(my_hand);
     cc_perts[entry]->solve(left);
    }
-    outfile->Printf("\n\n");
-    outfile->Printf("\n\tComputing Polarizability tensor:\n");
-    outfile->Printf("\n\n");
+
+    //string entry = "Mu" + cart[2] + std::to_string(omega);
+    //outfile->Printf("\n\tCC Perturbed Wavefunction: %s\n", entry.c_str());
+    //cc_perts[entry]->solve(left);
+
+    //outfile->Printf("\n\n");
+    //outfile->Printf("\n\tComputing Polarizability tensor:\n");
+    //outfile->Printf("\n\n");
 
 
   // Use perturbed wfns to construct the linear response function
   // Alternatively, build density-based linear response function
-  std::string mu1 = "Mu" + cart[2] + std::to_string(omega);
-  std::string mu2 = "Mu" + cart[2] + std::to_string(-omega);
-  shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[mu1], cc_perts[mu2]));
-  //double polar = ccpolar->linresp();
-  //outfile->Printf("\npolar_zz: %20.14lf\n", polar);
-  //cc_perts[mu1]->check_linear();
-  ccpolar->check_linear(cc_perts[mu2]);
-  ccpolar->check_quadratic(cc_perts[mu1],cc_perts[mu2]);
+  //std::string mu1 = "Mu" + cart[0] + std::to_string(omega);
+  //std::string mu2 = "Mu" + cart[1] + std::to_string(-omega);
+  //shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[mu1], cc_perts[mu2]));
+  ////double polar = ccpolar->linresp();
+  ////outfile->Printf("\npolar_zz: %20.14lf\n", polar);
+  //////cc_perts[mu1]->check_linear();
+  ////ccpolar->check_linear(cc_perts[mu2]);
+  //double value1 = ccpolar->check_quadratic(cc_perts[mu1],cc_perts[mu2]);
+  //double value2 = ccpolar->check_quadratic(cc_perts[mu2],cc_perts[mu1]);
+  //outfile->Printf("\nTotal Quadratic final: %20.14lf\n", 0.5 * (value1 + value2));
+
 
 //   for(vector<string>::size_type p = 0; p != cart.size(); p++) 
 //       for(vector<string>::size_type q = 0 ; q != cart.size(); q++) {
 //         string pert_p = "Mu" + cart[p] + std::to_string(omega);
-//         string pert_q = "Mu" + cart[q] + std::to_string(omega);
+//         string pert_q = "Mu" + cart[q] + std::to_string(-omega);
 //         shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[pert_p], cc_perts[pert_q]));
-//         string label = "<<Mu_" + cart[p] + ";" "Mu_" + cart[q] + ">>";
-//         polars[label] = ccpolar->linresp();
-//      }
+//         double value1 = ccpolar->check_quadratic(cc_perts[pert_p],cc_perts[pert_q]);
+//         double value2 = ccpolar->check_quadratic(cc_perts[pert_q],cc_perts[pert_p]);
+//         outfile->Printf("Quadratic final, value1: %20.14lf value2: %20.14lf Average: %20.14lf\n", value1, value2, 0.5 * (value1 + value2));
+//        }
 //
-//   for(auto elem : polars){
-//      outfile->Printf("\t%s : %20.14lf ", elem.first.c_str(), elem.second);
-//      outfile->Printf("\n\n");
-//      }
+    
+
+   for(vector<string>::size_type p = 0; p != cart.size(); p++)
+       for(vector<string>::size_type q = 0 ; q != cart.size(); q++) {
+         string pert_p = "Mu" + cart[p] + std::to_string(omega);
+         string pert_q = "Mu" + cart[q] + std::to_string(omega);
+         shared_ptr<CCLinResp> ccpolar(new CCLinResp(cc_perts[pert_p], cc_perts[pert_q]));
+         double polar = ccpolar->linresp(cc_perts[pert_p], cc_perts[pert_q]);
+         //double polar = 0.5 * ccpolar->linresp(cc_perts[pert_p], cc_perts[pert_q]);
+         //polar += 0.5 * ccpolar->linresp(cc_perts[pert_q], cc_perts[pert_p]);
+         string label = "<<Mu_" + cart[p] + ";" "Mu_" + cart[q] + ">>";
+         polars[label] = polar;
+        }
+
+
+
+
+//        string label = "<<Mu_" + cart[p] + ";" "Mu_" + cart[q] + ">>";
+ //        polars[label] = ccpolar->linresp();
+ //     }
+
+   for(auto elem : polars){
+      outfile->Printf("\t%s : %20.14lf ", elem.first.c_str(), elem.second);
+      outfile->Printf("\n\n");
+      }
 
   return cc;
 }

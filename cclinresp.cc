@@ -77,7 +77,7 @@ CCLinResp::~CCLinResp()
 
 }
 
-double  CCLinResp::linresp()
+double  CCLinResp::linresp(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
 {
 
  int no = no_ ;
@@ -89,50 +89,55 @@ double  CCLinResp::linresp()
  double **l1 =  CCLambda_->l1_;
  double ****l2 = CCLambda_->l2_;
 
- double **X1_x = X1_x_ ;
- double **Y1_x = Y1_x_ ;
+ double **X1_x = X->X1_ ;
+ double **Y1_x = X->Y1_ ;
 
- double ****X2_x = X2_x_ ;
- double ****Y2_x = Y2_x_ ;
+ double ****X2_x = X->X2_ ;
+ double ****Y2_x = X->Y2_ ;
 
- double **X1_y = X1_y_ ;
- double **Y1_y = Y1_y_ ;
+ double **X1_y = Y->X1_ ;
+ double **Y1_y = Y->Y1_ ;
 
- double ****X2_y = X2_y_ ;
- double ****Y2_y = Y2_y_ ;
+ double ****X2_y = Y->X2_ ;
+ double ****Y2_y = Y->Y2_ ;
 
- double **pert_x = pert_x_;
- double **pert_y = pert_y_;
+ double **pert_x = X->pert_;
+ double **pert_y = Y->pert_;
 
- double **Aov_x = Aov_x_;
- double **Aoo_x = Aoo_x_;
- double **Avv_x = Avv_x_;
- double **Avo_x = Avo_x_;
+ double **Aov_x = X->Aov_;
+ double **Aoo_x = X->Aoo_;
+ double **Avv_x = X->Avv_;
+ double **Avo_x = X->Avo_;
 
- double ****Aovoo_x = Aovoo_x_;
- double ****Avvvo_x = Avvvo_x_;
- double ****Avvoo_x = Avvoo_x_;
+ double ****Aovoo_x = X->Aovoo_;
+ double ****Avvvo_x = X->Avvvo_;
+ double ****Avvoo_x = X->Avvoo_;
 
- double **Aov_y = Aov_y_;
- double **Aoo_y = Aoo_y_;
- double **Avv_y = Avv_y_;
- double **Avo_y = Avo_y_;
+ double **Aov_y = Y->Aov_;
+ double **Aoo_y = Y->Aoo_;
+ double **Avv_y = Y->Avv_;
+ double **Avo_y = Y->Avo_;
 
- double ****Aovoo_y = Aovoo_y_;
- double ****Avvvo_y = Avvvo_y_;
- double ****Avvoo_y = Avvoo_y_;
+ double ****Aovoo_y = Y->Aovoo_;
+ double ****Avvvo_y = Y->Avvvo_;
+ double ****Avvoo_y = Y->Avvoo_;
 
-
+double first=0;
+double second=0;
 
 double polar1=0, polar2=0, polar=0;
 for (int i=0; i< no; i++)
   for (int a=0; a< nv; a++){
+    //polar1 += Avo_x[a][i] * Avo_x[a][i] ;
     polar1 += Avo_x[a][i] * Y1_y[i][a] ;
+    first += Avo_x[a][i] * Y1_y[i][a] ;
         for (int j=0; j< no; j++) 
           for (int b=0; b< nv; b++){
 	    polar1 += (0.50) * (Avvoo_x[a][b][i][j] + Avvoo_x[b][a][j][i])* Y2_y[i][j][a][b] ;
+	    second  += (0.50) * (Avvoo_x[a][b][i][j] + Avvoo_x[b][a][j][i])* Y2_y[i][j][a][b] ;
     } 
 }
+//outfile->Printf("\nFirst: %20.14lf Second: %20.14lf\n", first, second);
 
 for (int i=0; i< no; i++)
   for (int a=0; a< nv; a++){
@@ -157,7 +162,7 @@ for (int i=0; i< no; i++)
                 polar2 -= 0.5 * l2[i][j][a][b] * X1_y[k][b] * Aovoo_x[k][a][j][i] ;    // 4. checked
                
 		polar2 -= 0.5 * l2[i][j][a][b] * (X2_y[k][j][a][b]) * Aoo_x[k][i] ; // 4. checked
-		polar2 -= 0.5 * l2[i][j][a][b] * (X2_y[k][i][b][a]) * Aoo_x[k][j] ; // 4. checked 
+	        polar2 -= 0.5 * l2[i][j][a][b] * (X2_y[k][i][b][a]) * Aoo_x[k][j] ; // 4. checked 
         }
 
            for (int c=0; c< nv; c++){
@@ -170,8 +175,7 @@ for (int i=0; i< no; i++)
 }
 
 
-  outfile->Printf("\n polarizability first term: %20.14lf\n", polar1);
-  outfile->Printf("\n polarizability second term: %20.14lf\n", polar2);
+  outfile->Printf("\n polarizability first term: %20.14lf  polarizability second term: %20.14lf\n", polar1, polar2);
   //outfile->Printf("\n polarizability: %20.14lf\n", polar1 + polar2);
   return -1.0 * (polar1 + polar2) ;
 

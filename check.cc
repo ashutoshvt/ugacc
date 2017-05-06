@@ -117,7 +117,7 @@ for(int i=0; i < no; i++)
 
 
 
-void  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
+double  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
 {
   int no = no_;
   int nv = nv_;
@@ -148,6 +148,57 @@ void  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
  double **X1_y = Y->X1_;
  double ****X2_y = Y->X2_;
 
+
+outfile->Printf("X1 Amplitudes:\n");
+  for(int i=0; i < no; i++)
+    for(int a=0; a < nv; a++)
+      if(fabs(X1_[i][a]) > 1e-12)
+        outfile->Printf("X1[%d][%d] = %20.15f\n", i, a, X1_[i][a]);
+
+outfile->Printf("X1_y Amplitudes:\n");
+  for(int i=0; i < no; i++)
+    for(int a=0; a < nv; a++)
+      if(fabs(X1_y[i][a]) > 1e-12)
+        outfile->Printf("X1[%d][%d] = %20.15f\n", i, a, X1_y[i][a]);
+//  outfile->Printf("X2 Amplitudes:\n");
+//  for(int i=0; i < no; i++)
+//    for(int j=0; j < no; j++)
+//      for(int a=0; a < nv; a++)
+//        for(int b=0; b < nv; b++)
+// if(fabs(X2_[i][j][a][b]) > 1e-12)
+// outfile->Printf("X2[%d][%d][%d][%d] = %20.15f\n", i, j, a, b, X2_[i][j][a][b]);
+
+double ****t2 = CC_->t2_;
+double val_x=0, val_y=0 ;
+
+  for(int i=0; i < no; i++)
+    for(int a=0; a < nv; a++)
+      for(int m=0; m < no; m++)
+        for(int n=0; n < no; n++)
+          for(int e=0; e < nv; e++)
+            for(int f=0; f < nv; f++)
+              for(int j=0; j < no; j++)
+                 for(int b=0; b < nv; b++){
+	            val_x -=  X1_y[i][a] * H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    val_x -=  X1_y[i][a]* H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+                    val_x -=  X1_y[i][a]* H_->L_[m][n][e+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+                    val_x -=  X1_y[i][a]* H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[n][m][e][b] * l2_[j][m][e][b] ;
+
+	            val_y -=  X1_[i][a] * H_->L_[i][n][a+no][f+no] *X1_y[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    val_y -=  X1_[i][a]* H_->L_[m][i][e+no][f+no] * X1_y[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+                    val_y -=  X1_[i][a]* H_->L_[m][n][e+no][a+no] * X1_y[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+                    val_y -=  X1_[i][a]* H_->L_[i][n][a+no][f+no] * X1_y[j][f] * t2[n][m][e][b] * l2_[j][m][e][b] ;
+        }
+
+        outfile->Printf("\nX1_y * R1_x = %20.15f, X1_x * R1_y = %20.15lf \n", val_x, val_y);
+
+
+
+   for(int i=0; i < no; i++)
+     for(int a=0; a < nv; a++)
+	R1[i][a] = 0 ;
+
+
    for(int i=0; i < no; i++)
      for(int a=0; a < nv; a++){
 
@@ -173,10 +224,10 @@ void  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
       for(int n=0; n < no; n++)
         for(int e=0; e < nv; e++)
           for(int f=0; f < nv; f++){
-            R1[i][a] += 2.0 * X2_[m][n][e][f] * H_->L_[i][m][a+no][e+no] * l1_[n][f];   // (r)
-            R1[i][a] -= X2_[m][n][e][f] * H_->L_[i][m][a+no][f+no] * l1_[n][e];         // (r)
-            R1[i][a] -= X2_[m][n][e][f] * H_->L_[m][i][e+no][f+no] * l1_[n][a];         // (r)
-            R1[i][a] -= X2_[m][n][e][f] * H_->L_[n][m][f+no][a+no] * l1_[i][e];         // (r)
+            //R1[i][a] += 2.0 * X2_[m][n][e][f] * H_->L_[i][m][a+no][e+no] * l1_[n][f];   // (r)
+            //R1[i][a] -= X2_[m][n][e][f] * H_->L_[i][m][a+no][f+no] * l1_[n][e];         // (r)
+            //R1[i][a] -= X2_[m][n][e][f] * H_->L_[m][i][e+no][f+no] * l1_[n][a];         // (r)
+            //R1[i][a] -= X2_[m][n][e][f] * H_->L_[n][m][f+no][a+no] * l1_[i][e];         // (r)
 }
 
       for(int m=0; m < no; m++)
@@ -189,15 +240,22 @@ void  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
               R1[i][a] -= X1_[m][e] * Hovvo[i][f][e][n] * l2_[n][m][f][a];     // (s)
                 }
             for(int f=0; f < nv; f++)
-              for(int g=0; g < nv; g++)
-                R1[i][a] += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s)
+              for(int g=0; g < nv; g++){
+                //R1[i][a] += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s) ---problem
+
+                R1[i][a] += 0.5 * X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s) ---problem
+                R1[i][a] += 0.5 * X1_[m][e] * Hvvvv[f][g][e][a] * l2_[m][i][f][g];   // (s) ---problem
+		}
             for(int n=0; n < no; n++)
-              for(int o=0; o < no; o++)
-                R1[i][a] += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)
+              for(int o=0; o < no; o++){
+                //R1[i][a] += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)  ---problem
+
+                R1[i][a] += 0.5 * X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)  ---problem
+                R1[i][a] += 0.5 * X1_[m][e] * Hoooo[m][i][n][o] * l2_[n][o][e][a];   // (s)  ---problem
          }
+      }
 
   //double **Zvv = block_matrix(nv,nv);
-  //double ****t2 = CC_->t2_;
 
    ////    for(int f=0; f < nv; f++)
    ////       for(int b=0; b < nv; b++)
@@ -229,47 +287,63 @@ void  CCLinResp::check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y)
    ////              R1[i][a] -= 0.5 * H_->L_[i][n][a+no][e+no] * Zoo[n][m] * X1_[m][e];
 //     }
 
-//      for(int m=0; m < no; m++)
-//        for(int n=0; n < no; n++)
-//          for(int e=0; e < nv; e++)
-//            for(int f=0; f < nv; f++)
-//              for(int j=0; j < no; j++)
-//                 for(int b=0; b < nv; b++){
-//                    R1[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
-//                    R1[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
-//
-//                    //R1[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
-//                    //R1[i][a] -=  H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
-//
-//                    //R1[i][a] -=   H_->L_[j][n][f+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
-//                    //R1[i][a] -=   H_->L_[m][n][e+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
-//        }
+      for(int m=0; m < no; m++)
+        for(int n=0; n < no; n++)
+          for(int e=0; e < nv; e++)
+            for(int f=0; f < nv; f++)
+              for(int j=0; j < no; j++)
+                 for(int b=0; b < nv; b++){
+                    //R1[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    //R1[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
+
+                    //R1[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    //R1[i][a] -=  H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+
+                    //R1[i][a] -=   H_->L_[m][n][e+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+                    //R1[i][a] -=   H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
+
+		    R1[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    R1[i][a] -=  H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+
+                    R1[i][a] -=  H_->L_[m][n][e+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+                    R1[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[n][m][e][b] * l2_[j][m][e][b] ;
+
+
+
+        }
 
 
       for(int m=0; m < no; m++)
         for(int n=0; n < no; n++)
           for(int e=0; e < nv; e++)
             for(int f=0; f < nv; f++){
-              R1[i][a] -=  X2_[m][n][e][f] * Hov[m][a] * l2_[n][i][f][e];   // (t)
-              R1[i][a] -=  X2_[m][n][e][f] * Hov[i][e] * l2_[n][m][f][a];   // (t)
+              //R1[i][a] -=  X2_[m][n][e][f] * Hov[m][a] * l2_[n][i][f][e];   // (t)
+              //R1[i][a] -=  X2_[m][n][e][f] * Hov[i][e] * l2_[n][m][f][a];   // (t)
               for(int g=0; g < nv; g++){
-                R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][n][e][a] * l2_[i][m][f][g] ;   //(t)
-                R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][n][a][e] * l2_[m][i][f][g] ;   //(t)
-                R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][i][e][f] * l2_[n][m][a][g] ;      //(t) 
-                R1[i][a] +=  X2_[m][n][e][f] * (2*Hvovv[g][m][a][e] - Hvovv[g][m][e][a]) * l2_[n][i][f][g] ;   //(t)
-                R1[i][a] +=  X2_[m][n][e][f] * (2*Hvovv[g][i][e][a] - Hvovv[g][i][a][e]) * l2_[n][m][f][g] ;      //(t)
+               // R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][n][e][a] * l2_[i][m][f][g] ;   //(t)
+               // R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][n][a][e] * l2_[m][i][f][g] ;   //(t)
+               // R1[i][a] -=  X2_[m][n][e][f] * Hvovv[g][i][e][f] * l2_[n][m][a][g] ;      //(t) 
+               // R1[i][a] +=  X2_[m][n][e][f] * (2*Hvovv[g][m][a][e] - Hvovv[g][m][e][a]) * l2_[n][i][f][g] ;   //(t)
+               // R1[i][a] +=  X2_[m][n][e][f] * (2*Hvovv[g][i][e][a] - Hvovv[g][i][a][e]) * l2_[n][m][f][g] ;      //(t)
               }
 
         for(int o=0; o < no; o++){
-                R1[i][a] +=  X2_[m][n][e][f] * Hooov[m][n][o][a] * l2_[o][i][e][f] ; // (t)    
-                R1[i][a] +=  X2_[m][n][e][f] * Hooov[i][n][o][e] * l2_[o][m][a][f] ; // (t)    
-                R1[i][a] +=  X2_[m][n][e][f] * Hooov[m][i][o][f] * l2_[o][n][e][a] ; // (t)    
-                R1[i][a] -=  X2_[m][n][e][f] * (2*Hooov[m][i][o][a] - Hooov[i][m][o][a]) * l2_[n][o][f][e] ;   // (t)
-                R1[i][a] -=  X2_[m][n][e][f] * (2*Hooov[i][m][o][e] - Hooov[m][i][o][e]) * l2_[n][o][f][a] ;      // (t)
+                //R1[i][a] +=  X2_[m][n][e][f] * Hooov[m][n][o][a] * l2_[o][i][e][f] ; // (t)    
+                //R1[i][a] +=  X2_[m][n][e][f] * Hooov[i][n][o][e] * l2_[o][m][a][f] ; // (t)    
+                //R1[i][a] +=  X2_[m][n][e][f] * Hooov[m][i][o][f] * l2_[o][n][e][a] ; // (t)    
+                //R1[i][a] -=  X2_[m][n][e][f] * (2*Hooov[m][i][o][a] - Hooov[i][m][o][a]) * l2_[n][o][f][e] ;   // (t)
+                //R1[i][a] -=  X2_[m][n][e][f] * (2*Hooov[i][m][o][e] - Hooov[m][i][o][e]) * l2_[n][o][f][a] ;      // (t)
               }
        }
 }
 //
+  for(int i=0; i < no; i++)
+    for(int j=0; j < no; j++)
+      for(int a=0; a < nv; a++)
+        for(int b=0; b < nv; b++) {
+           R2[i][j][a][b] = 0 ;
+}
+
   for(int i=0; i < no; i++)
     for(int j=0; j < no; j++)
       for(int a=0; a < nv; a++)
@@ -380,14 +454,13 @@ for(int m=0; m < no; m++)
                           Zoo[n][j] += (X1_[m][e] * X1_y[j][f] + X1_[j][f] * X1_y[m][e]) * H_->L_[m][n][e+no][f+no];
         }
 
- double ****t2 = CC_->t2_;
 
  for(int i=0; i < no; i++)
     for(int j=0; j < no; j++)
       for(int a=0; a < nv; a++)
         for(int b=0; b < nv; b++)
            for(int f=0; f < nv; f++){
-            value1 -= l2_[i][j][a][b] * t2[i][j][a][f] * Zvv[f][b] ;
+            //value1 -= l2_[i][j][a][b] * t2[i][j][a][f] * Zvv[f][b] ;
       }
 
 for(int i=0; i < no; i++)
@@ -395,15 +468,17 @@ for(int i=0; i < no; i++)
       for(int a=0; a < nv; a++)
         for(int b=0; b < nv; b++)
            for(int n=0; n < no; n++){
-              value1 -= l2_[i][j][a][b] * t2[i][n][a][b] * Zoo[n][j] ;
+              //value1 -= l2_[i][j][a][b] * t2[i][n][a][b] * Zoo[n][j] ;
         }
 
 
 
 
-        outfile->Printf("\n LHX1Y1 ....: %20.14lf \n", value1);
-        outfile->Printf("\n ..LHX1Y2 + LHX2Y1 + LHX2Y2: %20.14lf \n", value2);
-        outfile->Printf("\n Total Quadratic term: %20.14lf \n", value1 + value2);
-
+        //outfile->Printf("\n LHX1Y1 ....: %20.14lf \n", value1);
+        //outfile->Printf("\n ..LHX1Y2 + LHX2Y1 + LHX2Y2: %20.14lf \n", value2);
+        //outfile->Printf("\n Total Quadratic term: %20.14lf \n", value1 + value2);
+  
+	return value1  ;
+	//return value1 + value2 ;
 }
 }}

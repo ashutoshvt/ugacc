@@ -12,8 +12,8 @@ public:
   CCLinResp(shared_ptr<CCPert> X, shared_ptr<CCPert> Y);
   //CCLinResp(shared_ptr<CCPert> X);
   ~CCLinResp();
-  double linresp();
-  void check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y);
+  double linresp(shared_ptr<CCPert> X, shared_ptr<CCPert> Y);
+  double  check_quadratic(shared_ptr<CCPert> X, shared_ptr<CCPert> Y);
   void check_linear(shared_ptr<CCPert> X);
 
 protected:

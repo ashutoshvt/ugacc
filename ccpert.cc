@@ -56,6 +56,8 @@ CCPert::CCPert(double **pert, double omega, shared_ptr<CCWfn> CC, shared_ptr<HBA
     for(int a=0; a < nv; a++) {
       X1_[i][a] = Avo_[a][i]/(D1_[i][a] + omega_);
       Y1_[i][a] = Avo_[a][i]/(D1_[i][a] + omega_);
+      //X1_[i][a] = Avo_[a][i]/(D1_[i][a] + 0.01);
+      //Y1_[i][a] = Avo_[a][i]/(D1_[i][a] + 0.01);
     }
 
   X2_ = init_4d_array(no, no, nv, nv);
@@ -68,6 +70,8 @@ CCPert::CCPert(double **pert, double omega, shared_ptr<CCWfn> CC, shared_ptr<HBA
         for(int b=0; b < nv; b++) {
           X2_[i][j][a][b] = (Avvoo_[a][b][i][j]+Avvoo_[b][a][j][i])/(D2_[i][j][a][b] + omega_);
           Y2_[i][j][a][b] = (Avvoo_[a][b][i][j]+Avvoo_[b][a][j][i])/(D2_[i][j][a][b] + omega_);
+          //X2_[i][j][a][b] = (Avvoo_[a][b][i][j]+Avvoo_[b][a][j][i])/(D2_[i][j][a][b] + 0.01);
+          //Y2_[i][j][a][b] = (Avvoo_[a][b][i][j]+Avvoo_[b][a][j][i])/(D2_[i][j][a][b]+ 0.01);
         }
 
   Gvv_ = block_matrix(nv, nv);
@@ -161,6 +165,12 @@ void CCPert::pertbar()
           Avo_[a][i] += (2.0*t2[m][i][e][a] - t2[i][m][e][a] - t1[i][e] * t1[m][a]) * pert_[m][e+no];
     }
 
+	outfile->Printf("\nAvo\n");
+  for(int a=0; a < nv; a++)
+    for(int i=0; i < no; i++) {
+	outfile->Printf("%20.14lf", Avo_[a][i]);
+ 	}
+
   for(int m=0; m < no; m++)
     for(int b=0; b < nv; b++)
       for(int i=0; i < no; i++)
@@ -189,6 +199,14 @@ void CCPert::pertbar()
           for(int m=0; m < no; m++)
             Avvoo_[a][b][i][j] -= t2[m][j][a][b] * Aoo_[m][i];
         }
+
+	outfile->Printf("\nAvvoo\n");
+  for(int a=0; a < nv; a++)
+    for(int b=0; b < nv; b++)
+      for(int i=0; i < no; i++)
+        for(int j=0; j < no; j++) {
+	   outfile->Printf("%20.14lf", Avvoo_[a][b][i][j]);
+	}
 }
 
 void CCPert::solve(enum hand myhand)
@@ -215,8 +233,10 @@ void CCPert::solve(enum hand myhand)
     rms = increment_amps(myhand);
 
     if(rms < CC_->convergence_) 
+{     //print_amps(myhand);
       break;
-    if(CC_->do_diis_) {
+} 
+   if(CC_->do_diis_) {
       build_diis_error(myhand);
       if(myhand == right) {
         diis->add_entry(4, X1err_.data(), X2err_.data(), X1diis_.data(), X2diis_.data());
@@ -253,6 +273,7 @@ else {X1 = Y1_; X2 = Y2_;}
       for(int j=0; j < no; j++)
         for(int b=0; b < nv; b++)
           polar2 += 2.0 * (2.0 * X2[i][j][a][b] - X2[i][j][b][a]) * Avvoo_[a][b][i][j];
+          //polar2 += 0; 
    }
 
   return -2.0*(polar1 + polar2);
@@ -370,10 +391,12 @@ double CCPert::increment_amps(enum hand myhand)
     for(int a=0; a < nv; a++) {
       residual1 += X1[i][a] * X1[i][a];
       X1[i][a] = X1old[i][a] + X1[i][a]/(D1_[i][a] + omega_);
+      //X1[i][a] = X1old[i][a] + X1[i][a]/(D1_[i][a]+ 0.01);
       for(int j=0; j < no; j++)
         for(int b=0; b < nv; b++) {
           residual2 += X2[i][j][a][b] * X2[i][j][a][b];
           X2[i][j][a][b] = X2old[i][j][a][b] + X2[i][j][a][b]/(D2_[i][j][a][b] + omega_);
+          //X2[i][j][a][b] = X2old[i][j][a][b] + X2[i][j][a][b]/(D2_[i][j][a][b] + 0.01);
         }
     }
 
@@ -651,47 +674,62 @@ void CCPert::build_Y1()
 	      Y1_[i][a] -= X1_[m][e] * Hovvo[m][f][a][n] * l2_[n][i][f][e];     // (s)	
 	      Y1_[i][a] -= X1_[m][e] * Hovvo[i][f][e][n] * l2_[n][m][f][a];     // (s)
 		}
-            for(int f=0; f < nv; f++)
-              for(int g=0; g < nv; g++)
-                Y1_[i][a] += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s)
+            //for(int f=0; f < nv; f++)
+            //  for(int g=0; g < nv; g++)
+            //    Y1_[i][a] += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s)
+            //for(int n=0; n < no; n++)
+            //  for(int o=0; o < no; o++)
+            //    Y1_[i][a] += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)
+	    for(int f=0; f < nv; f++)
+              for(int g=0; g < nv; g++){
+                //R1[i][a] += X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s) ---problem
+
+                Y1_[i][a] += 0.5 * X1_[m][e] * Hvvvv[f][g][a][e] * l2_[i][m][f][g];   // (s) ---problem
+                Y1_[i][a] += 0.5 * X1_[m][e] * Hvvvv[f][g][e][a] * l2_[m][i][f][g];   // (s) ---problem
+                }
             for(int n=0; n < no; n++)
-              for(int o=0; o < no; o++)
-                Y1_[i][a] += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)
+              for(int o=0; o < no; o++){
+                //R1[i][a] += X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)  ---problem
+
+                Y1_[i][a] += 0.5 * X1_[m][e] * Hoooo[i][m][n][o] * l2_[n][o][a][e];   // (s)  ---problem
+                Y1_[i][a] += 0.5 * X1_[m][e] * Hoooo[m][i][n][o] * l2_[n][o][e][a];   // (s)  ---problem
+         }
+
          }    
 
- //double **Zvv = block_matrix(nv,nv);
+// //double **Zvv = block_matrix(nv,nv);
  double ****t2 = CC_->t2_;
-//
-//       for(int f=0; f < nv; f++)
-//          for(int b=0; b < nv; b++)
-//    	     for(int j=0; j < no; j++)
-//                 for(int m=0; m < no; m++)
-//                     for(int e=0; e < nv; e++)
-//                       Zvv[f][b] += t2[j][m][f][e] * l2_[j][m][b][e];
-//
-//        double **Zoo = block_matrix(no,no);
-//
-//       for(int n=0; n < no; n++)
-//          for(int j=0; j < no; j++)
-//             for(int b=0; b < nv; b++)
-//               for(int f=0; f < nv; f++) {
-//                          Zoo[n][i] += t2[j][n][b][f] * l2_[j][i][b][f];
-//        }
-//
-//       for(int n=0; n < no; n++)
-//          for(int b=0; b < nv; b++)
-//             for(int f=0; f < nv; f++){
-//              Y1_[i][a] -= 0.5 * H_->L_[i][n][a+no][f+no] * Zvv[f][b] * X1_[n][b];
-//              Y1_[i][a] -= 0.5 * H_->L_[n][i][b+no][f+no] * Zvv[f][a] * X1_[n][b];
-//        }
-//
-//        for(int m=0; m < no; m++)
-//           for(int n=0; n < no; n++)
-//              for(int e=0; e < nv; e++){
-//                 Y1_[i][a] -= 0.5 * H_->L_[m][n][e+no][a+no] * Zoo[n][i] * X1_[m][e];
-//                 Y1_[i][a] -= 0.5 * H_->L_[i][n][a+no][e+no] * Zoo[n][m] * X1_[m][e];
-//        }
-//
+////
+////       for(int f=0; f < nv; f++)
+////          for(int b=0; b < nv; b++)
+////    	     for(int j=0; j < no; j++)
+////                 for(int m=0; m < no; m++)
+////                     for(int e=0; e < nv; e++)
+////                       Zvv[f][b] += t2[j][m][f][e] * l2_[j][m][b][e];
+////
+////        double **Zoo = block_matrix(no,no);
+////
+////       for(int n=0; n < no; n++)
+////          for(int j=0; j < no; j++)
+////             for(int b=0; b < nv; b++)
+////               for(int f=0; f < nv; f++) {
+////                          Zoo[n][i] += t2[j][n][b][f] * l2_[j][i][b][f];
+////        }
+////
+////       for(int n=0; n < no; n++)
+////          for(int b=0; b < nv; b++)
+////             for(int f=0; f < nv; f++){
+////              Y1_[i][a] -= 0.5 * H_->L_[i][n][a+no][f+no] * Zvv[f][b] * X1_[n][b];
+////              Y1_[i][a] -= 0.5 * H_->L_[n][i][b+no][f+no] * Zvv[f][a] * X1_[n][b];
+////        }
+////
+////        for(int m=0; m < no; m++)
+////           for(int n=0; n < no; n++)
+////              for(int e=0; e < nv; e++){
+////                 Y1_[i][a] -= 0.5 * H_->L_[m][n][e+no][a+no] * Zoo[n][i] * X1_[m][e];
+////                 Y1_[i][a] -= 0.5 * H_->L_[i][n][a+no][e+no] * Zoo[n][m] * X1_[m][e];
+////        }
+////
 
       for(int m=0; m < no; m++)
         for(int n=0; n < no; n++)
@@ -699,8 +737,21 @@ void CCPert::build_Y1()
             for(int f=0; f < nv; f++)
               for(int j=0; j < no; j++)
                  for(int b=0; b < nv; b++){
-                    Y1_[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
-                    Y1_[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
+                    //Y1_[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    //Y1_[i][a] -=  2.0 * H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
+
+                    //Y1_[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    //Y1_[i][a] -=  H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+
+                    //Y1_[i][a] -=  H_->L_[m][n][e+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+                    //Y1_[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[m][n][e][b] * l2_[m][j][e][b] ;
+
+                    Y1_[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[n][b] * t2[j][m][f][e] * l2_[j][m][b][e] ;
+                    Y1_[i][a] -=  H_->L_[m][i][e+no][f+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][n][a][b] ;
+
+		    Y1_[i][a] -=  H_->L_[m][n][e+no][a+no] * X1_[m][e] * t2[j][n][f][b] * l2_[j][i][f][b] ;
+		    Y1_[i][a] -=  H_->L_[i][n][a+no][f+no] * X1_[j][f] * t2[n][m][e][b] * l2_[j][m][e][b] ;
+
         }
 
 
@@ -721,11 +772,11 @@ void CCPert::build_Y1()
 	        Y1_[i][a] +=  X2_[m][n][e][f] * (2*Hvovv[g][i][e][a] - Hvovv[g][i][a][e]) * l2_[n][m][f][g] ;      //(t)
 	      }
               for(int o=0; o < no; o++){
-	        Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[m][n][o][a] * l2_[o][i][e][f] ; // (t)	
-	        Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[i][n][o][e] * l2_[o][m][a][f] ; // (t) 	
-	        Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[m][i][o][f] * l2_[o][n][e][a] ; // (t)	
-	        Y1_[i][a] -=  X2_[m][n][e][f] * (2*Hooov[m][i][o][a] - Hooov[i][m][o][a]) * l2_[n][o][f][e] ; 	// (t)
-	        Y1_[i][a] -=  X2_[m][n][e][f] * (2*Hooov[i][m][o][e] - Hooov[m][i][o][e]) * l2_[n][o][f][a] ;      // (t)
+	       Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[m][n][o][a] * l2_[o][i][e][f] ; // (t)	
+	       Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[i][n][o][e] * l2_[o][m][a][f] ; // (t) 	
+	       Y1_[i][a] +=  X2_[m][n][e][f] * Hooov[m][i][o][f] * l2_[o][n][e][a] ; // (t)	
+	       Y1_[i][a] -=  X2_[m][n][e][f] * (2*Hooov[m][i][o][a] - Hooov[i][m][o][a]) * l2_[n][o][f][e] ; 	// (t)
+	       Y1_[i][a] -=  X2_[m][n][e][f] * (2*Hooov[i][m][o][e] - Hooov[m][i][o][e]) * l2_[n][o][f][a] ;      // (t)
               }
          }
     }
@@ -810,7 +861,7 @@ void CCPert::build_Y2()
           for(int m=0; m < no; m++)
             for(int e=0; e < nv; e++) {
 	      R2[i][j][a][b] -=  X1_[m][e] * l1_[j][a] * H_->L_[m][i][e+no][b+no]; // (u)
-	      R2[i][j][a][b] -=  X1_[m][e] * l1_[m][b] * H_->L_[i][j][a+no][e+no]; // (u)
+              R2[i][j][a][b] -=  X1_[m][e] * l1_[m][b] * H_->L_[i][j][a+no][e+no]; // (u)
 	      R2[i][j][a][b] -=  X1_[m][e] * l1_[i][e] * H_->L_[j][m][b+no][a+no]; // (u)
 	      R2[i][j][a][b] += 2.0 * X1_[m][e] * l1_[j][b] * H_->L_[i][m][a+no][e+no]; // (u) 
          }

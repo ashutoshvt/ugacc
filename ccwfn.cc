@@ -214,7 +214,10 @@ double CCWfn::compute_energy() {
     build_t1();
     build_t2();
     rms = increment_amps();
-    if(rms < convergence_) break;
+    if(rms < convergence_) {
+	//print_amps();
+	break;
+    }
     if(do_diis_) {
       build_diis_error();
       diis->add_entry(4, t1err_.data(), t2err_.data(), t1diis_.data(), t2diis_.data());   

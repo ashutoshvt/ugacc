@@ -119,6 +119,7 @@ void CCLambda::compute_lambda()
     build_l1();
     build_l2();
     rms = increment_amps();
+    //print_amps();
     if(rms < CC_->convergence_) {
         print_amps();
 	break;
@@ -289,9 +290,9 @@ void CCLambda::build_l2()
   for(int i=0; i < no; i++)
     for(int j=0; j < no; j++)
       for(int a=0; a < nv; a++)
-        for(int b=0; b < nv; b++)
+        for(int b=0; b < nv; b++){
           l2new[i][j][a][b] = Z[i][j][a][b] + Z[j][i][b][a];
-
+	}
    free_4d_array(Z, no, no, nv);
 }
 
@@ -306,14 +307,16 @@ double CCLambda::pseudoenergy()
   int nv = nv_;
   double ****ints = H_->ints_;
   double ****l2 = l2_;
+  double **l1 = l1_;
 
   double energy=0.0;
   for(int i=0; i < no; i++)
     for(int j=0; j < no; j++)
       for(int a=0; a < nv; a++)
-        for(int b=0; b < nv; b++)
+        for(int b=0; b < nv; b++){
           energy += 0.5*ints[i][j][a+no][b+no]*l2[i][j][a][b];
-
+          //energy += 0.5*ints[i][j][a+no][b+no] * l1[i][a] * l1[j][b];
+         }
   return energy;
 }
 
